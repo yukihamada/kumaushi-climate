@@ -7,6 +7,7 @@ COPY Cargo.lock ./
 COPY docker/Cargo.toml ./Cargo.toml
 COPY crates/common crates/common
 COPY crates/controller crates/controller
+COPY dashboard dashboard
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM --platform=linux/amd64 chef AS builder
@@ -15,6 +16,7 @@ COPY docker/Cargo.toml ./Cargo.toml
 COPY Cargo.lock ./
 COPY crates/common crates/common
 COPY crates/controller crates/controller
+COPY dashboard dashboard
 RUN cargo chef cook --release --recipe-path recipe.json
 RUN cargo build --release --bin kumaushi-controller
 
@@ -26,4 +28,5 @@ VOLUME ["/data"]
 ENV KUMAUSHI_DB=/data/kumaushi.db
 EXPOSE 3000
 
-ENTRYPOINT ["/usr/local/bin/kumaushi-controller"]
+RUN apt-get update && apt-get install -y --no-install-recommends bash && rm -rf /var/lib/apt/lists/*
+CMD ["/bin/bash", "-c", "echo 'BINARY START' >&2; /usr/local/bin/kumaushi-controller 2>&1; echo \"EXIT: $?\" >&2"]

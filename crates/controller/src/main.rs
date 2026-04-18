@@ -56,6 +56,7 @@ fn default_zones() -> Vec<Zone> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    eprintln!("[kumaushi] main() entered");
     dotenvy::dotenv().ok();
     tracing_subscriber::fmt()
         .with_env_filter(
