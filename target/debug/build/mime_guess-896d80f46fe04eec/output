@@ -1,1 +1,0 @@
-cargo:rustc-env=MIME_TYPES_GENERATED_PATH=/Users/yuki/workspace/kumaushi-climate/target/debug/build/mime_guess-896d80f46fe04eec/out/mime_types_generated.rs
