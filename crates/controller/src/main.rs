@@ -66,7 +66,8 @@ async fn main() -> anyhow::Result<()> {
 
     info!("KUMAUSHI CLIMATE — Controller starting");
 
-    let db = db::Database::open("kumaushi.db").await?;
+    let db_path = std::env::var("KUMAUSHI_DB").unwrap_or_else(|_| "kumaushi.db".into());
+    let db = db::Database::open(&db_path).await?;
     let gpio = gpio::GpioController::new();
     let audio = audio::AudioController::new(&gpio);
     let hue = lighting::HueClient::new();
