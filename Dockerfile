@@ -18,6 +18,8 @@ COPY crates/common crates/common
 COPY crates/controller crates/controller
 COPY dashboard dashboard
 RUN cargo chef cook --release --recipe-path recipe.json
+# CACHEBUST arg ensures cargo build is re-run when source changes
+ARG REBUILD=1
 RUN cargo build --release --bin kumaushi-controller
 
 FROM --platform=linux/amd64 debian:bookworm-slim AS runtime
