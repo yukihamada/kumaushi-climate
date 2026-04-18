@@ -279,6 +279,7 @@ fn parse_schedule_row(row: &rusqlite::Row) -> rusqlite::Result<Schedule> {
             temperature: row.get(5)?,
             co2_max: row.get(6)?,
             humidity: row.get(7)?,
+            cooling_threshold: Some(26.0),
         },
         enabled: row.get::<_, i64>(8)? != 0,
     })

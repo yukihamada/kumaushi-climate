@@ -82,21 +82,38 @@ async fn step(state: &Arc<crate::AppState>, pids: &mut PidMap) {
                 "センサーデータ未受信（90秒超）— フェイルセーフ換気中");
         }
 
-        // --- Temperature / Heating ---
+        // --- Temperature: Heating + Cooling (AC) ---
         if let Some(temp) = zone.current.temperature {
-            let relay_id = format!("heat-{}", zone.id);
+            let heat_id = format!("heat-{}", zone.id);
+            let cool_id = format!("cool-{}", zone.id);
             let sp = zone.setpoints.temperature;
-            let on = if is_stale {
-                // Failsafe: keep heat on to prevent freezing in Hokkaido winter
-                temp < 10.0
+
+            if is_stale {
+                // Failsafe: anti-freeze only, no cooling
+                state.gpio.set_relay(&heat_id, temp < 10.0);
+                state.gpio.set_relay(&cool_id, false);
             } else if zone.mode == ZoneMode::Auto {
                 temp_pid.compute(sp, temp, dt);
-                temp < sp - 0.5
+                // Heating: on below setpoint-0.5°C, off above setpoint+0.1°C
+                let heat_on = temp < sp - 0.5;
+                state.gpio.set_relay(&heat_id, heat_on);
+
+                // Cooling: wall-mount AC, activates above cooling_threshold (default 26°C)
+                let cool_on = if let Some(threshold) = zone.setpoints.cooling_threshold {
+                    temp > threshold + 0.5  // 0.5°C hysteresis
+                } else {
+                    false
+                };
+                // Never run heat and cool simultaneously
+                state.gpio.set_relay(&cool_id, cool_on && !heat_on);
+                debug!("Zone {} T={:.1}°C heat={} cool={}", zone.id, temp, heat_on, cool_on && !heat_on);
             } else {
-                state.gpio.get(&relay_id) > 0.5
-            };
-            state.gpio.set_relay(&relay_id, on);
-            debug!("Zone {} heat: {} (T={:.1}°C sp={:.1}°C)", zone.id, on, temp, sp);
+                // Manual: preserve current GPIO state
+                let h = state.gpio.get(&heat_id) > 0.5;
+                let c = state.gpio.get(&cool_id) > 0.5;
+                state.gpio.set_relay(&heat_id, h);
+                state.gpio.set_relay(&cool_id, c);
+            }
         }
 
         // --- Humidity ---

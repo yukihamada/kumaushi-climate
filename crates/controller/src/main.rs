@@ -28,17 +28,17 @@ pub struct AppState {
 fn default_zones() -> Vec<Zone> {
     vec![
         Zone { id: "z1".into(), name: "メインリビング".into(), containers: vec![1, 2],
-               mode: ZoneMode::Auto, setpoints: Setpoints { temperature: 22.0, co2_max: 800.0, humidity: 50.0 }, current: ZoneState::default() },
+               mode: ZoneMode::Auto, setpoints: Setpoints { temperature: 22.0, co2_max: 800.0, humidity: 50.0, cooling_threshold: Some(26.0) }, current: ZoneState::default() },
         Zone { id: "z2".into(), name: "寝室A".into(), containers: vec![3, 4],
-               mode: ZoneMode::Auto, setpoints: Setpoints { temperature: 20.0, co2_max: 700.0, humidity: 55.0 }, current: ZoneState::default() },
+               mode: ZoneMode::Auto, setpoints: Setpoints { temperature: 20.0, co2_max: 700.0, humidity: 55.0, cooling_threshold: Some(25.0) }, current: ZoneState::default() },
         Zone { id: "z3".into(), name: "寝室B".into(), containers: vec![5, 6],
-               mode: ZoneMode::Auto, setpoints: Setpoints { temperature: 20.0, co2_max: 700.0, humidity: 55.0 }, current: ZoneState::default() },
+               mode: ZoneMode::Auto, setpoints: Setpoints { temperature: 20.0, co2_max: 700.0, humidity: 55.0, cooling_threshold: Some(25.0) }, current: ZoneState::default() },
         Zone { id: "z4".into(), name: "バス・サウナ".into(), containers: vec![7, 8],
-               mode: ZoneMode::Auto, setpoints: Setpoints { temperature: 38.0, co2_max: 1200.0, humidity: 70.0 }, current: ZoneState::default() },
+               mode: ZoneMode::Auto, setpoints: Setpoints { temperature: 38.0, co2_max: 1200.0, humidity: 70.0, cooling_threshold: None }, current: ZoneState::default() },
         Zone { id: "z5".into(), name: "多目的・ワーク".into(), containers: vec![9, 10],
-               mode: ZoneMode::Auto, setpoints: Setpoints { temperature: 21.0, co2_max: 800.0, humidity: 50.0 }, current: ZoneState::default() },
+               mode: ZoneMode::Auto, setpoints: Setpoints { temperature: 21.0, co2_max: 800.0, humidity: 50.0, cooling_threshold: Some(26.0) }, current: ZoneState::default() },
         Zone { id: "z6".into(), name: "機械室・廊下".into(), containers: vec![11, 12],
-               mode: ZoneMode::Off, setpoints: Setpoints::default(), current: ZoneState::default() },
+               mode: ZoneMode::Off, setpoints: Setpoints { temperature: 15.0, co2_max: 1200.0, humidity: 60.0, cooling_threshold: None }, current: ZoneState::default() },
     ]
 }
 

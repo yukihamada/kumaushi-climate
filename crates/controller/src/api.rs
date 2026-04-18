@@ -264,6 +264,7 @@ async fn create_schedule(
             temperature: body.temperature.unwrap_or(22.0),
             co2_max: body.co2_max.unwrap_or(800.0),
             humidity: body.humidity.unwrap_or(50.0),
+            cooling_threshold: Some(26.0),
         },
         enabled: true,
     };

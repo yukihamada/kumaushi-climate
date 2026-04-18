@@ -68,11 +68,14 @@ pub struct Setpoints {
     pub temperature: f64,
     pub co2_max: f64,
     pub humidity: f64,
+    /// If Some, cooling (AC) kicks in above this temperature (°C)
+    #[serde(default)]
+    pub cooling_threshold: Option<f64>,
 }
 
 impl Default for Setpoints {
     fn default() -> Self {
-        Self { temperature: 22.0, co2_max: 800.0, humidity: 50.0 }
+        Self { temperature: 22.0, co2_max: 800.0, humidity: 50.0, cooling_threshold: Some(26.0) }
     }
 }
 
@@ -103,6 +106,8 @@ pub enum DeviceType {
     Fan,
     Damper,
     HeatingRelay,
+    /// Wall-mount AC unit (cooling mode)
+    CoolingRelay,
     SaunaRelay,
     PumpRelay,
     Dehumidifier,
