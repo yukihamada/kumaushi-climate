@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KUMAUSHI CLIMATE — リアルタイムダッシュボード</title>
+<style>
+  :root {
+    --bg: #0a0c10;
+    --panel: #111621;
+    --border: #1e2533;
+    --text: #c9d1e0;
+    --muted: #5a6680;
+    --accent: #3d8bff;
+    --green: #2ecc71;
+    --yellow: #f1c40f;
+    --red: #e74c3c;
+    --gold: #c9a84c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', 'Consolas', monospace;
+    min-height: 100vh;
+  }
+  header {
+    padding: 1.2rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  header h1 {
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    font-weight: 600;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s infinite;
+  }
+  .status-dot.offline { background: var(--red); box-shadow: 0 0 6px var(--red); animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+  }
+  .zone-card {
+    background: var(--panel);
+    padding: 1.4rem 1.6rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .zone-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--accent);
+    opacity: 0.6;
+  }
+  .zone-card.z4::before { background: var(--gold); }
+  .zone-name {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+  }
+  .zone-id {
+    font-size: 0.65rem;
+    color: var(--muted);
+    opacity: 0.6;
+  }
+  .readings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin: 1rem 0;
+  }
+  .reading {
+    display: flex;
+    flex-direction: column;
+  }
+  .reading-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+  .reading-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .reading-unit { font-size: 0.65rem; color: var(--muted); margin-left: 2px; }
+
+  .v-good { color: var(--green); }
+  .v-warn { color: var(--yellow); }
+  .v-crit { color: var(--red); }
+  .v-neutral { color: var(--text); }
+
+  .controls {
+    margin-top: 1rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .control-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+  .bar {
+    width: 50px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+  .relay-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .relay-dot.on { background: var(--green); box-shadow: 0 0 4px var(--green); }
+
+  .mode-badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .mode-badge.auto { border-color: var(--accent); color: var(--accent); }
+  .mode-badge.manual { border-color: var(--yellow); color: var(--yellow); }
+  .mode-badge.off { border-color: var(--muted); color: var(--muted); opacity: 0.5; }
+
+  .alerts-panel {
+    padding: 1rem 2rem;
+    border-top: 1px solid var(--border);
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  .alert-row {
+    font-size: 0.65rem;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 1rem;
+    color: var(--muted);
+  }
+  .alert-row.warning .alert-msg { color: var(--yellow); }
+  .alert-row.critical .alert-msg { color: var(--red); }
+
+  footer {
+    padding: 0.8rem 2rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.62rem;
+    color: var(--muted);
+    display: flex;
+    gap: 2rem;
+  }
+  #last-update { color: var(--accent); }
+  #ws-status { }
+</style>
+</head>
+<body>
+<header>
+  <div class="status-dot" id="ws-dot"></div>
+  <h1>KUMAUSHI CLIMATE</h1>
+  <span style="color:var(--muted);font-size:.7rem;letter-spacing:.08em">— 屈斜路湖 気候制御システム</span>
+</header>
+
+<div class="grid" id="zone-grid">
+  <!-- zones injected by JS -->
+</div>
+
+<div class="alerts-panel" id="alerts-panel"></div>
+
+<footer>
+  <span>最終更新: <span id="last-update">--</span></span>
+  <span id="ws-status">WebSocket: 接続中...</span>
+  <span style="margin-left:auto">KUMAUSHI BASE © SOLUNA</span>
+</footer>
+
+<script>
+const API = '';
+let ws = null;
+let controls = {};
+const zoneData = {};
+
+const ZONES = [
+  { id:'z1', name:'メインリビング', containers:[1,2] },
+  { id:'z2', name:'寝室 A',         containers:[3,4] },
+  { id:'z3', name:'寝室 B',         containers:[5,6] },
+  { id:'z4', name:'バス・サウナ',    containers:[7,8] },
+  { id:'z5', name:'多目的・ワーク',  containers:[9,10] },
+  { id:'z6', name:'機械室・廊下',   containers:[11,12] },
+];
+
+function co2Class(v) {
+  if (!v) return 'v-neutral';
+  if (v < 800) return 'v-good';
+  if (v < 1200) return 'v-warn';
+  return 'v-crit';
+}
+function tempClass(v) {
+  if (!v) return 'v-neutral';
+  if (v >= 18 && v <= 26) return 'v-good';
+  if (v < 10 || v > 32) return 'v-crit';
+  return 'v-warn';
+}
+function humClass(v) {
+  if (!v) return 'v-neutral';
+  if (v >= 40 && v <= 65) return 'v-good';
+  if (v < 25 || v > 80) return 'v-crit';
+  return 'v-warn';
+}
+
+function renderZones(zones) {
+  const grid = document.getElementById('zone-grid');
+  grid.innerHTML = zones.map(z => {
+    const cur = z.current || {};
+    const sp = z.setpoints || {};
+    const mode = z.mode || 'auto';
+
+    const co2 = cur.co2_ppm;
+    const temp = cur.temperature;
+    const hum = cur.humidity;
+    const wt = cur.water_temp;
+
+    const fanKey = `fan-${z.id}`;
+    const heatKey = `heat-${z.id}`;
+    const fanPct = Math.round((controls[fanKey] || 0) * 100);
+    const heatOn = (controls[heatKey] || 0) > 0.5;
+
+    return `<div class="zone-card ${z.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.3rem">
+        <div>
+          <div class="zone-name">${z.name}</div>
+          <div class="zone-id">${z.containers.map(c=>'C'+c).join(' · ')}</div>
+        </div>
+        <span class="mode-badge ${mode}">${mode}</span>
+      </div>
+      <div class="readings">
+        <div class="reading">
+          <span class="reading-label">CO₂</span>
+          <span class="reading-value ${co2Class(co2)}">${co2 != null ? Math.round(co2) : '--'}<span class="reading-unit">ppm</span></span>
+        </div>
+        <div class="reading">
+          <span class="reading-label">温度</span>
+          <span class="reading-value ${tempClass(temp)}">${temp != null ? temp.toFixed(1) : '--'}<span class="reading-unit">°C</span></span>
+        </div>
+        <div class="reading">
+          <span class="reading-label">湿度</span>
+          <span class="reading-value ${humClass(hum)}">${hum != null ? Math.round(hum) : '--'}<span class="reading-unit">%</span></span>
+        </div>
+        ${wt != null ? `<div class="reading">
+          <span class="reading-label">水温</span>
+          <span class="reading-value v-neutral">${wt.toFixed(1)}<span class="reading-unit">°C</span></span>
+        </div>` : `<div class="reading">
+          <span class="reading-label">目標CO₂</span>
+          <span class="reading-value v-neutral" style="font-size:.95rem">${sp.co2_max || '--'}<span class="reading-unit">ppm</span></span>
+        </div>`}
+      </div>
+      <div class="controls">
+        <div class="control-item">
+          換気
+          <div class="bar"><div class="bar-fill" style="width:${fanPct}%"></div></div>
+          ${fanPct}%
+        </div>
+        <div class="control-item">
+          <div class="relay-dot ${heatOn?'on':''}"></div>
+          ${z.id==='z4' ? 'ボイラー' : '床暖'} ${heatOn ? 'ON' : 'OFF'}
+        </div>
+        <div class="control-item" style="margin-left:auto;color:var(--muted)">
+          目標 ${sp.temperature || '--'}°C
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fetchAll() {
+  Promise.all([
+    fetch(`${API}/api/v1/dashboard`).then(r=>r.json()),
+    fetch(`${API}/api/v1/controls`).then(r=>r.json()),
+  ]).then(([dash, ctrl]) => {
+    controls = ctrl;
+    renderZones(dash.zones);
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString('ja-JP');
+  }).catch(e => console.warn('fetch error', e));
+}
+
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws`);
+  const dot = document.getElementById('ws-dot');
+  const status = document.getElementById('ws-status');
+
+  ws.onopen = () => {
+    dot.classList.remove('offline');
+    status.textContent = 'WebSocket: 接続済み';
+    fetchAll();
+  };
+  ws.onmessage = (e) => {
+    // Incremental update on new sensor reading
+    try {
+      const r = JSON.parse(e.data);
+      // Store in zoneData keyed by node prefix
+      const zid = r.node_id.match(/node-(z\d)/)?.[1];
+      if (zid) {
+        if (!zoneData[zid]) zoneData[zid] = {};
+        if (r.sensor_type === 'co2') zoneData[zid].co2_ppm = r.value;
+        else if (r.sensor_type === 'temperature') zoneData[zid].temperature = r.value;
+        else if (r.sensor_type === 'humidity') zoneData[zid].humidity = r.value;
+        else if (r.sensor_type === 'water_temp') zoneData[zid].water_temp = r.value;
+      }
+    } catch {}
+    // Re-render controls every 10 messages
+    fetchAll();
+  };
+  ws.onclose = () => {
+    dot.classList.add('offline');
+    status.textContent = 'WebSocket: 切断 (再接続中...)';
+    setTimeout(connectWS, 5000);
+  };
+  ws.onerror = () => ws.close();
+}
+
+// Initial load
+fetchAll();
+setInterval(fetchAll, 30000);
+connectWS();
+</script>
+</body>
+</html>
