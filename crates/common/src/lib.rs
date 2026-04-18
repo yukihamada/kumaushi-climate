@@ -153,11 +153,15 @@ impl Schedule {
     }
 }
 
-/// Dashboard snapshot
+/// Dashboard snapshot — full system state
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DashboardSnapshot {
     pub zones: Vec<Zone>,
     pub alerts: Vec<Alert>,
+    pub audio: Vec<AudioZone>,
+    pub dj: DjStatus,
+    pub energy: EnergySnapshot,
+    pub lights: Vec<HueLight>,
     pub timestamp: DateTime<Utc>,
 }
 
@@ -178,6 +182,96 @@ pub enum AlertLevel {
     Warning,
     Critical,
 }
+
+// ─── Audio ────────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AudioZone {
+    pub id: String,
+    pub name: String,
+    /// 0.0 – 1.0
+    pub volume: f64,
+    pub muted: bool,
+    pub source: AudioSource,
+    pub amp_on: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum AudioSource {
+    Dj,
+    Line,
+    Bluetooth,
+    Off,
+}
+
+impl std::fmt::Display for AudioSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Dj => write!(f, "DJ (Pioneer Link)"),
+            Self::Line => write!(f, "Line In"),
+            Self::Bluetooth => write!(f, "Bluetooth"),
+            Self::Off => write!(f, "Off"),
+        }
+    }
+}
+
+// ─── Pioneer DJ Link ──────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct DjStatus {
+    pub link_active: bool,
+    pub deck1_bpm: Option<f64>,
+    pub deck2_bpm: Option<f64>,
+    pub deck1_track: Option<String>,
+    pub deck2_track: Option<String>,
+    pub master_bpm: Option<f64>,
+    pub updated_at: Option<DateTime<Utc>>,
+}
+
+// ─── Lighting ─────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HueLight {
+    pub id: String,
+    pub name: String,
+    pub on: bool,
+    /// 0–254
+    pub brightness: u8,
+    /// 0–65535 (colour temperature in mired, or None for dimmable only)
+    pub color_temp: Option<u16>,
+    pub reachable: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LightScene {
+    pub id: String,
+    pub name: String,
+}
+
+// ─── Energy ───────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct EnergySnapshot {
+    /// Solar PV generation (W). Positive = generating.
+    pub solar_w: f64,
+    /// Grid import/export (W). Positive = import, negative = export.
+    pub grid_w: f64,
+    /// Battery state of charge (%).
+    pub battery_pct: f64,
+    /// Powerwall charge/discharge (W). Positive = charging.
+    pub battery_w: f64,
+    /// Total site load (W).
+    pub load_w: f64,
+    pub powerwall_online: bool,
+    /// Starlink downlink throughput (Mbps), None if not reachable.
+    pub starlink_dl_mbps: Option<f64>,
+    /// Starlink uplink (Mbps).
+    pub starlink_ul_mbps: Option<f64>,
+    pub timestamp: DateTime<Utc>,
+}
+
+// ─── Full dashboard snapshot ──────────────────────────────────────────────────
 
 /// PID controller state
 #[derive(Debug, Clone, Serialize, Deserialize)]

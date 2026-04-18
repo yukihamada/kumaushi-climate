@@ -1,7 +1,11 @@
 mod api;
+mod audio;
 mod control;
 mod db;
+mod dj;
+mod energy;
 mod gpio;
+mod lighting;
 mod mqtt_client;
 
 use std::collections::HashMap;
@@ -23,6 +27,14 @@ pub struct AppState {
     pub gpio: gpio::GpioController,
     /// Bearer token for API auth (empty = no auth)
     pub auth_token: String,
+    /// Multi-zone audio control
+    pub audio: audio::AudioController,
+    /// Pioneer DJ Link status monitor
+    pub dj: dj::DjMonitor,
+    /// Philips Hue lighting client
+    pub hue: lighting::HueClient,
+    /// Powerwall + Starlink energy monitor (Arc so polling loop can share it)
+    pub energy: Arc<energy::EnergyMonitor>,
 }
 
 fn default_zones() -> Vec<Zone> {
@@ -56,12 +68,17 @@ async fn main() -> anyhow::Result<()> {
 
     let db = db::Database::open("kumaushi.db").await?;
     let gpio = gpio::GpioController::new();
+    let audio = audio::AudioController::new(&gpio);
+    let hue = lighting::HueClient::new();
+    let energy = Arc::new(energy::EnergyMonitor::new());
     let (sensor_tx, _) = broadcast::channel(256);
     let auth_token = std::env::var("AUTH_TOKEN").unwrap_or_default();
 
     if auth_token.is_empty() {
         tracing::warn!("AUTH_TOKEN not set — API is unauthenticated");
     }
+
+    let dj_monitor = dj::DjMonitor::new();
 
     let state = Arc::new(AppState {
         db,
@@ -70,6 +87,10 @@ async fn main() -> anyhow::Result<()> {
         sensor_tx: sensor_tx.clone(),
         gpio,
         auth_token,
+        audio,
+        dj: dj_monitor,
+        hue,
+        energy,
     });
 
     let mqtt_state = Arc::clone(&state);
@@ -83,6 +104,23 @@ async fn main() -> anyhow::Result<()> {
     tokio::spawn(async move {
         control::run_loop(control_state).await;
     });
+
+    // Hue: refresh lights + scenes every 30s
+    let hue_state = Arc::clone(&state);
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(30));
+        loop {
+            interval.tick().await;
+            let _ = hue_state.hue.refresh_lights().await;
+            let _ = hue_state.hue.refresh_scenes().await;
+        }
+    });
+
+    // Energy: Powerwall + Starlink polling
+    {
+        let em = Arc::clone(&state.energy);
+        tokio::spawn(async move { energy::EnergyMonitor::run_poll_loop(em).await; });
+    }
 
     let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".into());
     let router = api::build_router(Arc::clone(&state));

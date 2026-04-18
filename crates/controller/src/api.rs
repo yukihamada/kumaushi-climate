@@ -12,7 +12,7 @@ use serde::Deserialize;
 use tower_http::cors::CorsLayer;
 use tracing::{debug, error};
 
-use kumaushi_common::{DashboardSnapshot, Schedule, Setpoints, ZoneMode};
+use kumaushi_common::{AudioSource, DashboardSnapshot, Schedule, Setpoints, ZoneMode};
 use crate::SharedState;
 
 pub fn build_router(state: SharedState) -> Router {
@@ -40,6 +40,20 @@ pub fn build_router(state: SharedState) -> Router {
         .route("/api/v1/schedules", get(get_schedules))
         .route("/api/v1/schedules", post(create_schedule))
         .route("/api/v1/schedules/:id", delete(delete_schedule))
+        // ── Audio ──────────────────────────────────────────────
+        .route("/api/v1/audio", get(get_audio))
+        .route("/api/v1/audio/:zone_id/volume", post(set_audio_volume))
+        .route("/api/v1/audio/:zone_id/source", post(set_audio_source))
+        .route("/api/v1/audio/:zone_id/mute", post(set_audio_mute))
+        .route("/api/v1/audio/scene/:name", post(apply_audio_scene))
+        // ── DJ Link ────────────────────────────────────────────
+        .route("/api/v1/dj", get(get_dj_status))
+        // ── Lighting ───────────────────────────────────────────
+        .route("/api/v1/lights", get(get_lights))
+        .route("/api/v1/lights/:id", post(set_light))
+        .route("/api/v1/lights/scene/:name", post(apply_light_preset))
+        // ── Energy ─────────────────────────────────────────────
+        .route("/api/v1/energy", get(get_energy))
         .route_layer(middleware::from_fn_with_state(Arc::clone(&state), auth_middleware));
 
     Router::new()
@@ -196,7 +210,11 @@ async fn set_control(
 async fn get_dashboard(State(state): State<SharedState>) -> impl IntoResponse {
     let zones = state.zones.read().await.clone();
     let alerts = state.db.get_alerts(20, false).unwrap_or_default();
-    let snapshot = DashboardSnapshot { zones, alerts, timestamp: chrono::Utc::now() };
+    let audio = state.audio.all();
+    let dj = state.dj.current();
+    let energy = state.energy.current();
+    let lights = state.hue.all_lights();
+    let snapshot = DashboardSnapshot { zones, alerts, audio, dj, energy, lights, timestamp: chrono::Utc::now() };
     Json(snapshot).into_response()
 }
 
@@ -302,4 +320,112 @@ async fn handle_ws(mut socket: WebSocket, state: SharedState) {
             Err(_) => break,
         }
     }
+}
+
+// ── Audio ──────────────────────────────────────────────────────────────────
+
+async fn get_audio(State(state): State<SharedState>) -> impl IntoResponse {
+    Json(state.audio.all()).into_response()
+}
+
+#[derive(Deserialize)]
+struct VolumeBody { volume: f64 }
+
+async fn set_audio_volume(
+    State(state): State<SharedState>,
+    Path(zone_id): Path<String>,
+    Json(body): Json<VolumeBody>,
+) -> impl IntoResponse {
+    if state.audio.set_volume(&zone_id, body.volume, &state.gpio) {
+        Json(state.audio.get(&zone_id)).into_response()
+    } else {
+        (StatusCode::NOT_FOUND, "zone not found").into_response()
+    }
+}
+
+#[derive(Deserialize)]
+struct SourceBody { source: String }
+
+async fn set_audio_source(
+    State(state): State<SharedState>,
+    Path(zone_id): Path<String>,
+    Json(body): Json<SourceBody>,
+) -> impl IntoResponse {
+    let source = match body.source.as_str() {
+        "dj" => AudioSource::Dj,
+        "line" => AudioSource::Line,
+        "bluetooth" => AudioSource::Bluetooth,
+        "off" => AudioSource::Off,
+        _ => return (StatusCode::BAD_REQUEST, "invalid source: dj|line|bluetooth|off").into_response(),
+    };
+    if state.audio.set_source(&zone_id, source, &state.gpio) {
+        Json(state.audio.get(&zone_id)).into_response()
+    } else {
+        (StatusCode::NOT_FOUND, "zone not found").into_response()
+    }
+}
+
+#[derive(Deserialize)]
+struct MuteBody { muted: bool }
+
+async fn set_audio_mute(
+    State(state): State<SharedState>,
+    Path(zone_id): Path<String>,
+    Json(body): Json<MuteBody>,
+) -> impl IntoResponse {
+    if state.audio.set_mute(&zone_id, body.muted, &state.gpio) {
+        Json(state.audio.get(&zone_id)).into_response()
+    } else {
+        (StatusCode::NOT_FOUND, "zone not found").into_response()
+    }
+}
+
+async fn apply_audio_scene(
+    State(state): State<SharedState>,
+    Path(name): Path<String>,
+) -> impl IntoResponse {
+    state.audio.apply_scene(&name, &state.gpio);
+    Json(serde_json::json!({"scene": name, "applied": true})).into_response()
+}
+
+// ── DJ Link ────────────────────────────────────────────────────────────────
+
+async fn get_dj_status(State(state): State<SharedState>) -> impl IntoResponse {
+    Json(state.dj.current()).into_response()
+}
+
+// ── Lighting ───────────────────────────────────────────────────────────────
+
+async fn get_lights(State(state): State<SharedState>) -> impl IntoResponse {
+    Json(state.hue.all_lights()).into_response()
+}
+
+#[derive(Deserialize)]
+struct LightBody { on: bool, brightness: Option<u8> }
+
+async fn set_light(
+    State(state): State<SharedState>,
+    Path(id): Path<String>,
+    Json(body): Json<LightBody>,
+) -> impl IntoResponse {
+    match state.hue.set_light(&id, body.on, body.brightness).await {
+        Ok(_) => Json(serde_json::json!({"id": id, "on": body.on})).into_response(),
+        Err(e) => { error!("{}", e); (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() }
+    }
+}
+
+async fn apply_light_preset(
+    State(state): State<SharedState>,
+    Path(name): Path<String>,
+) -> impl IntoResponse {
+    match state.hue.apply_preset(&name).await {
+        Ok(_) => Json(serde_json::json!({"preset": name, "applied": true})).into_response(),
+        Err(e) => { error!("{}", e); (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response() }
+    }
+}
+
+// ── Energy ─────────────────────────────────────────────────────────────────
+
+async fn get_energy(State(state): State<SharedState>) -> impl IntoResponse {
+    Json(state.energy.current()).into_response()
 }

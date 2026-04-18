@@ -16,295 +16,353 @@
     --yellow: #f1c40f;
     --red: #e74c3c;
     --gold: #c9a84c;
+    --purple: #9b59b6;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'SF Mono', 'Consolas', monospace;
-    min-height: 100vh;
-  }
-  header {
-    padding: 1.2rem 2rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  header h1 {
-    font-size: 1.1rem;
-    letter-spacing: 0.15em;
-    color: var(--gold);
-    font-weight: 600;
-  }
-  .status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 6px var(--green);
-    animation: pulse 2s infinite;
-  }
+  body { background: var(--bg); color: var(--text); font-family: 'SF Mono','Consolas',monospace; min-height: 100vh; }
+
+  header { padding: 1rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 1rem; }
+  header h1 { font-size: 1rem; letter-spacing: .15em; color: var(--gold); font-weight: 700; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
   .status-dot.offline { background: var(--red); box-shadow: 0 0 6px var(--red); animation: none; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1px;
-    background: var(--border);
+  /* ── Section headers ── */
+  .section-header {
+    padding: .5rem 2rem;
+    background: var(--bg);
     border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    font-size: .6rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
-  .zone-card {
-    background: var(--panel);
-    padding: 1.4rem 1.6rem;
-    position: relative;
-    overflow: hidden;
-  }
-  .zone-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 3px; height: 100%;
-    background: var(--accent);
-    opacity: 0.6;
-  }
+
+  /* ── Zone cards ── */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 1px; background: var(--border); }
+  .zone-card { background: var(--panel); padding: 1.2rem 1.4rem; position: relative; overflow: hidden; }
+  .zone-card::before { content:''; position:absolute; top:0; left:0; width:3px; height:100%; background: var(--accent); opacity:.6; }
   .zone-card.z4::before { background: var(--gold); }
-  .zone-name {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    margin-bottom: 0.6rem;
-  }
-  .zone-id {
-    font-size: 0.65rem;
-    color: var(--muted);
-    opacity: 0.6;
-  }
-  .readings {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.8rem;
-    margin: 1rem 0;
-  }
-  .reading {
-    display: flex;
-    flex-direction: column;
-  }
-  .reading-label {
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    margin-bottom: 0.2rem;
-  }
-  .reading-value {
-    font-size: 1.4rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-  .reading-unit { font-size: 0.65rem; color: var(--muted); margin-left: 2px; }
-
-  .v-good { color: var(--green); }
-  .v-warn { color: var(--yellow); }
-  .v-crit { color: var(--red); }
-  .v-neutral { color: var(--text); }
-
-  .controls {
-    margin-top: 1rem;
-    padding-top: 0.8rem;
-    border-top: 1px solid var(--border);
-    display: flex;
-    gap: 0.6rem;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  .control-item {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.65rem;
-    color: var(--muted);
-  }
-  .bar {
-    width: 50px; height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .bar-fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 2px;
-    transition: width 1s ease;
-  }
-  .relay-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--muted);
-  }
+  .zone-card.stale { opacity: .6; }
+  .zone-name { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: .4rem; }
+  .zone-id { font-size: .6rem; color: var(--muted); opacity: .6; }
+  .readings { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin: .8rem 0; }
+  .reading-label { font-size: .55rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: .1rem; }
+  .reading-value { font-size: 1.3rem; font-weight: 700; line-height: 1; }
+  .reading-unit { font-size: .6rem; color: var(--muted); margin-left: 2px; }
+  .v-good { color: var(--green); } .v-warn { color: var(--yellow); } .v-crit { color: var(--red); } .v-neutral { color: var(--text); }
+  .controls-row { margin-top: .8rem; padding-top: .6rem; border-top: 1px solid var(--border); display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; font-size: .6rem; color: var(--muted); }
+  .bar { width: 44px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; display: inline-block; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .8s; }
+  .relay-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); display: inline-block; }
   .relay-dot.on { background: var(--green); box-shadow: 0 0 4px var(--green); }
-
-  .mode-badge {
-    display: inline-block;
-    font-size: 0.6rem;
-    padding: 0.15rem 0.5rem;
-    border-radius: 3px;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
+  .relay-dot.cool { background: var(--accent); }
+  .mode-badge { display: inline-block; font-size: .55rem; padding: .12rem .45rem; border-radius: 3px; border: 1px solid var(--border); color: var(--muted); text-transform: uppercase; }
   .mode-badge.auto { border-color: var(--accent); color: var(--accent); }
   .mode-badge.manual { border-color: var(--yellow); color: var(--yellow); }
-  .mode-badge.off { border-color: var(--muted); color: var(--muted); opacity: 0.5; }
+  .mode-badge.off { opacity: .4; }
 
-  .alerts-panel {
-    padding: 1rem 2rem;
-    border-top: 1px solid var(--border);
-    max-height: 120px;
-    overflow-y: auto;
-  }
-  .alert-row {
-    font-size: 0.65rem;
-    padding: 0.25rem 0;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    gap: 1rem;
-    color: var(--muted);
-  }
+  /* ── Energy bar ── */
+  .energy-panel { background: var(--panel); padding: 1.2rem 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 1.2rem; }
+  .energy-item label { font-size: .55rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); display: block; margin-bottom: .3rem; }
+  .energy-value { font-size: 1.5rem; font-weight: 700; }
+  .energy-sub { font-size: .6rem; color: var(--muted); margin-top: .1rem; }
+  .soc-bar { width: 100%; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: .4rem; }
+  .soc-fill { height: 100%; border-radius: 3px; transition: width 1s; }
+
+  /* ── Audio ── */
+  .audio-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 1px; background: var(--border); }
+  .audio-card { background: var(--panel); padding: .9rem 1.2rem; }
+  .audio-name { font-size: .65rem; color: var(--muted); margin-bottom: .4rem; text-transform: uppercase; letter-spacing: .08em; }
+  .vol-bar { width: 100%; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin: .4rem 0; }
+  .vol-fill { height: 100%; background: var(--purple); border-radius: 2px; transition: width .5s; }
+  .source-badge { font-size: .55rem; padding: .1rem .4rem; border-radius: 2px; background: rgba(155,89,182,.15); color: var(--purple); border: 1px solid rgba(155,89,182,.3); }
+  .source-badge.off { background: none; color: var(--muted); border-color: var(--border); }
+
+  /* ── DJ ── */
+  .dj-panel { background: var(--panel); padding: 1rem 2rem; display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
+  .bpm-display { font-size: 2.5rem; font-weight: 800; color: var(--gold); letter-spacing: -.03em; }
+  .bpm-label { font-size: .55rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+  .dj-offline { color: var(--muted); font-size: .7rem; }
+
+  /* ── Lights ── */
+  .lights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 1px; background: var(--border); }
+  .light-card { background: var(--panel); padding: .7rem 1rem; display: flex; align-items: center; gap: .6rem; }
+  .light-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .light-dot.on { background: var(--yellow); box-shadow: 0 0 6px rgba(241,196,15,.5); }
+  .light-name { font-size: .6rem; color: var(--text); line-height: 1.3; }
+  .light-bri { font-size: .55rem; color: var(--muted); }
+
+  /* ── Alerts ── */
+  .alerts-panel { padding: .8rem 2rem; max-height: 100px; overflow-y: auto; }
+  .alert-row { font-size: .62rem; padding: .2rem 0; border-bottom: 1px solid var(--border); display: flex; gap: 1rem; color: var(--muted); }
   .alert-row.warning .alert-msg { color: var(--yellow); }
   .alert-row.critical .alert-msg { color: var(--red); }
 
-  footer {
-    padding: 0.8rem 2rem;
-    border-top: 1px solid var(--border);
-    font-size: 0.62rem;
-    color: var(--muted);
-    display: flex;
-    gap: 2rem;
-  }
+  footer { padding: .7rem 2rem; border-top: 1px solid var(--border); font-size: .58rem; color: var(--muted); display: flex; gap: 2rem; flex-wrap: wrap; }
   #last-update { color: var(--accent); }
-  #ws-status { }
+
+  .scene-btns { display: flex; gap: .4rem; flex-wrap: wrap; }
+  .scene-btn { font-size: .58rem; padding: .2rem .7rem; border-radius: 3px; border: 1px solid var(--border); background: none; color: var(--muted); cursor: pointer; font-family: inherit; transition: all .2s; }
+  .scene-btn:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 </head>
 <body>
 <header>
   <div class="status-dot" id="ws-dot"></div>
   <h1>KUMAUSHI CLIMATE</h1>
-  <span style="color:var(--muted);font-size:.7rem;letter-spacing:.08em">— 屈斜路湖 気候制御システム</span>
+  <span style="color:var(--muted);font-size:.65rem;letter-spacing:.08em">— 屈斜路湖 統合管理システム</span>
+  <div style="margin-left:auto;display:flex;gap:.5rem" class="scene-btns">
+    <button class="scene-btn" onclick="audioScene('party')">🎉 Party</button>
+    <button class="scene-btn" onclick="audioScene('sleep')">🌙 Sleep</button>
+    <button class="scene-btn" onclick="audioScene('sauna')">♨️ Sauna</button>
+    <button class="scene-btn" onclick="lightPreset('party')">💡 Party照明</button>
+    <button class="scene-btn" onclick="lightPreset('morning')">☀️ Morning</button>
+    <button class="scene-btn" onclick="lightPreset('all_off')">⬛ 全消灯</button>
+  </div>
 </header>
 
-<div class="grid" id="zone-grid">
-  <!-- zones injected by JS -->
+<!-- ── HVAC Zones ── -->
+<div class="section-header">空調・換気 — HVAC ZONES</div>
+<div class="grid" id="zone-grid"></div>
+
+<!-- ── Energy ── -->
+<div class="section-header">エネルギー — POWERWALL + STARLINK</div>
+<div class="energy-panel" id="energy-panel">
+  <div class="energy-item"><label>太陽光</label><div class="energy-value" id="e-solar">--</div><div class="energy-sub">W</div></div>
+  <div class="energy-item"><label>負荷</label><div class="energy-value" id="e-load">--</div><div class="energy-sub">W</div></div>
+  <div class="energy-item"><label>バッテリー</label><div class="energy-value" id="e-batt">--</div><div class="energy-sub">%<span id="e-batt-w" style="font-size:.6rem;color:var(--muted)"></span></div><div class="soc-bar"><div class="soc-fill" id="e-soc-fill"></div></div></div>
+  <div class="energy-item"><label>系統</label><div class="energy-value" id="e-grid">--</div><div class="energy-sub" id="e-grid-label">W</div></div>
+  <div class="energy-item"><label>Starlink ↓</label><div class="energy-value" id="e-sl-dl">--</div><div class="energy-sub">Mbps</div></div>
+  <div class="energy-item"><label>Starlink ↑</label><div class="energy-value" id="e-sl-ul">--</div><div class="energy-sub">Mbps</div></div>
 </div>
 
+<!-- ── DJ ── -->
+<div class="section-header">DJ リンク — PIONEER PRO DJ LINK</div>
+<div class="dj-panel" id="dj-panel">
+  <div>
+    <div class="bpm-label">MASTER BPM</div>
+    <div class="bpm-display" id="dj-bpm">--</div>
+  </div>
+  <div style="font-size:.65rem;color:var(--muted)">
+    <div>DECK 1: <span id="dj-d1" style="color:var(--text)">--</span></div>
+    <div style="margin-top:.3rem">DECK 2: <span id="dj-d2" style="color:var(--text)">--</span></div>
+  </div>
+  <div id="dj-link-badge" style="font-size:.6rem;padding:.2rem .7rem;border-radius:3px;border:1px solid var(--border);color:var(--muted)">OFFLINE</div>
+</div>
+
+<!-- ── Audio ── -->
+<div class="section-header">音響 — MULTI-ZONE AUDIO</div>
+<div class="audio-grid" id="audio-grid"></div>
+
+<!-- ── Lighting ── -->
+<div class="section-header">照明 — PHILIPS HUE</div>
+<div class="lights-grid" id="lights-grid">
+  <div class="light-card" style="color:var(--muted);font-size:.6rem;grid-column:1/-1;background:var(--panel);padding:.8rem 1.2rem">
+    Hue未接続 — HUE_BRIDGE_IP / HUE_USERNAME を設定してください
+  </div>
+</div>
+
+<!-- ── Alerts ── -->
+<div class="section-header">アラート</div>
 <div class="alerts-panel" id="alerts-panel"></div>
 
 <footer>
   <span>最終更新: <span id="last-update">--</span></span>
   <span id="ws-status">WebSocket: 接続中...</span>
-  <span style="margin-left:auto">KUMAUSHI BASE © SOLUNA</span>
+  <span style="margin-left:auto">KUMAUSHI BASE © SOLUNA 2026</span>
 </footer>
 
 <script>
 const API = '';
-let ws = null;
 let controls = {};
-const zoneData = {};
 
-const ZONES = [
-  { id:'z1', name:'メインリビング', containers:[1,2] },
-  { id:'z2', name:'寝室 A',         containers:[3,4] },
-  { id:'z3', name:'寝室 B',         containers:[5,6] },
-  { id:'z4', name:'バス・サウナ',    containers:[7,8] },
-  { id:'z5', name:'多目的・ワーク',  containers:[9,10] },
-  { id:'z6', name:'機械室・廊下',   containers:[11,12] },
-];
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const co2Class = v => !v ? 'v-neutral' : v < 800 ? 'v-good' : v < 1200 ? 'v-warn' : 'v-crit';
+const tempClass = v => !v ? 'v-neutral' : (v >= 18 && v <= 27) ? 'v-good' : (v < 10 || v > 33) ? 'v-crit' : 'v-warn';
+const humClass  = v => !v ? 'v-neutral' : (v >= 40 && v <= 65) ? 'v-good' : (v < 25 || v > 80) ? 'v-crit' : 'v-warn';
 
-function co2Class(v) {
-  if (!v) return 'v-neutral';
-  if (v < 800) return 'v-good';
-  if (v < 1200) return 'v-warn';
-  return 'v-crit';
-}
-function tempClass(v) {
-  if (!v) return 'v-neutral';
-  if (v >= 18 && v <= 26) return 'v-good';
-  if (v < 10 || v > 32) return 'v-crit';
-  return 'v-warn';
-}
-function humClass(v) {
-  if (!v) return 'v-neutral';
-  if (v >= 40 && v <= 65) return 'v-good';
-  if (v < 25 || v > 80) return 'v-crit';
-  return 'v-warn';
-}
-
+// ── HVAC Zone renderer ───────────────────────────────────────────────────────
 function renderZones(zones) {
-  const grid = document.getElementById('zone-grid');
-  grid.innerHTML = zones.map(z => {
+  document.getElementById('zone-grid').innerHTML = zones.map(z => {
     const cur = z.current || {};
-    const sp = z.setpoints || {};
+    const sp  = z.setpoints || {};
     const mode = z.mode || 'auto';
-
-    const co2 = cur.co2_ppm;
+    const co2  = cur.co2_ppm;
     const temp = cur.temperature;
-    const hum = cur.humidity;
-    const wt = cur.water_temp;
+    const hum  = cur.humidity;
+    const wt   = cur.water_temp;
+    const fanPct  = Math.round((controls[`fan-${z.id}`]  || 0) * 100);
+    const heatOn  = (controls[`heat-${z.id}`] || 0) > 0.5;
+    const coolOn  = (controls[`cool-${z.id}`] || 0) > 0.5;
+    const dehuOn  = (controls[`dehu-${z.id}`] || 0) > 0.5;
+    const stale   = cur.sensor_stale ? ' stale' : '';
 
-    const fanKey = `fan-${z.id}`;
-    const heatKey = `heat-${z.id}`;
-    const fanPct = Math.round((controls[fanKey] || 0) * 100);
-    const heatOn = (controls[heatKey] || 0) > 0.5;
-
-    return `<div class="zone-card ${z.id}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.3rem">
+    return `<div class="zone-card ${z.id}${stale}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.2rem">
         <div>
           <div class="zone-name">${z.name}</div>
-          <div class="zone-id">${z.containers.map(c=>'C'+c).join(' · ')}</div>
+          <div class="zone-id">${z.containers.map(c=>'C'+c).join('·')}</div>
         </div>
         <span class="mode-badge ${mode}">${mode}</span>
       </div>
       <div class="readings">
-        <div class="reading">
-          <span class="reading-label">CO₂</span>
-          <span class="reading-value ${co2Class(co2)}">${co2 != null ? Math.round(co2) : '--'}<span class="reading-unit">ppm</span></span>
+        <div>
+          <div class="reading-label">CO₂</div>
+          <div class="reading-value ${co2Class(co2)}">${co2!=null?Math.round(co2):'--'}<span class="reading-unit">ppm</span></div>
         </div>
-        <div class="reading">
-          <span class="reading-label">温度</span>
-          <span class="reading-value ${tempClass(temp)}">${temp != null ? temp.toFixed(1) : '--'}<span class="reading-unit">°C</span></span>
+        <div>
+          <div class="reading-label">温度</div>
+          <div class="reading-value ${tempClass(temp)}">${temp!=null?temp.toFixed(1):'--'}<span class="reading-unit">°C</span></div>
         </div>
-        <div class="reading">
-          <span class="reading-label">湿度</span>
-          <span class="reading-value ${humClass(hum)}">${hum != null ? Math.round(hum) : '--'}<span class="reading-unit">%</span></span>
+        <div>
+          <div class="reading-label">湿度</div>
+          <div class="reading-value ${humClass(hum)}">${hum!=null?Math.round(hum):'--'}<span class="reading-unit">%</span></div>
         </div>
-        ${wt != null ? `<div class="reading">
-          <span class="reading-label">水温</span>
-          <span class="reading-value v-neutral">${wt.toFixed(1)}<span class="reading-unit">°C</span></span>
-        </div>` : `<div class="reading">
-          <span class="reading-label">目標CO₂</span>
-          <span class="reading-value v-neutral" style="font-size:.95rem">${sp.co2_max || '--'}<span class="reading-unit">ppm</span></span>
+        ${wt!=null ? `<div>
+          <div class="reading-label">水温</div>
+          <div class="reading-value v-neutral">${wt.toFixed(1)}<span class="reading-unit">°C</span></div>
+        </div>` : `<div>
+          <div class="reading-label">目標CO₂</div>
+          <div class="reading-value v-neutral" style="font-size:.9rem">${sp.co2_max||'--'}<span class="reading-unit">ppm</span></div>
         </div>`}
       </div>
-      <div class="controls">
-        <div class="control-item">
-          換気
-          <div class="bar"><div class="bar-fill" style="width:${fanPct}%"></div></div>
-          ${fanPct}%
-        </div>
-        <div class="control-item">
-          <div class="relay-dot ${heatOn?'on':''}"></div>
-          ${z.id==='z4' ? 'ボイラー' : '床暖'} ${heatOn ? 'ON' : 'OFF'}
-        </div>
-        <div class="control-item" style="margin-left:auto;color:var(--muted)">
-          目標 ${sp.temperature || '--'}°C
-        </div>
+      <div class="controls-row">
+        <span>換気 <div class="bar"><div class="bar-fill" style="width:${fanPct}%"></div></div> ${fanPct}%</span>
+        <span><div class="relay-dot ${heatOn?'on':''}"></div> ${z.id==='z4'?'ボイラー':'床暖'} ${heatOn?'ON':'OFF'}</span>
+        ${sp.cooling_threshold!=null ? `<span><div class="relay-dot ${coolOn?'cool on':''}"></div> AC ${coolOn?'ON':'OFF'}</span>` : ''}
+        ${hum!=null ? `<span><div class="relay-dot ${dehuOn?'on':''}"></div> 除湿</span>` : ''}
+        <span style="margin-left:auto;color:var(--muted)">目標 ${sp.temperature||'--'}°C</span>
       </div>
     </div>`;
   }).join('');
 }
 
+// ── Energy renderer ──────────────────────────────────────────────────────────
+function renderEnergy(e) {
+  if (!e) return;
+  const fmt = v => Math.abs(v) >= 1000 ? (v/1000).toFixed(1)+'k' : Math.round(v).toString();
+  document.getElementById('e-solar').textContent = fmt(e.solar_w||0);
+  document.getElementById('e-load').textContent  = fmt(e.load_w||0);
+  document.getElementById('e-batt').textContent  = (e.battery_pct||0).toFixed(1);
+  const bw = e.battery_w||0;
+  document.getElementById('e-batt-w').textContent = bw ? ` (${bw>0?'+':''}${fmt(bw)}W)` : '';
+  const soc = e.battery_pct||0;
+  const socFill = document.getElementById('e-soc-fill');
+  socFill.style.width = soc+'%';
+  socFill.style.background = soc > 50 ? 'var(--green)' : soc > 20 ? 'var(--yellow)' : 'var(--red)';
+  const grid = e.grid_w||0;
+  document.getElementById('e-grid').textContent = fmt(Math.abs(grid));
+  document.getElementById('e-grid-label').textContent = grid >= 0 ? 'W 買電' : 'W 売電';
+  document.getElementById('e-sl-dl').textContent = e.starlink_dl_mbps!=null ? e.starlink_dl_mbps.toFixed(1) : '--';
+  document.getElementById('e-sl-ul').textContent = e.starlink_ul_mbps!=null ? e.starlink_ul_mbps.toFixed(1) : '--';
+}
+
+// ── DJ renderer ──────────────────────────────────────────────────────────────
+function renderDj(dj) {
+  if (!dj) return;
+  const badge = document.getElementById('dj-link-badge');
+  if (dj.link_active) {
+    badge.textContent = '● LINK ACTIVE';
+    badge.style.cssText = 'font-size:.6rem;padding:.2rem .7rem;border-radius:3px;border:1px solid var(--green);color:var(--green)';
+  } else {
+    badge.textContent = '○ OFFLINE';
+    badge.style.cssText = 'font-size:.6rem;padding:.2rem .7rem;border-radius:3px;border:1px solid var(--border);color:var(--muted)';
+  }
+  document.getElementById('dj-bpm').textContent  = dj.master_bpm ? dj.master_bpm.toFixed(1) : '--';
+  document.getElementById('dj-d1').textContent   = dj.deck1_bpm ? dj.deck1_bpm.toFixed(1)+' BPM' : 'STANDBY';
+  document.getElementById('dj-d2').textContent   = dj.deck2_bpm ? dj.deck2_bpm.toFixed(1)+' BPM' : 'STANDBY';
+}
+
+// ── Audio renderer ───────────────────────────────────────────────────────────
+function renderAudio(audio) {
+  if (!audio || !audio.length) return;
+  document.getElementById('audio-grid').innerHTML = audio.map(z => {
+    const volPct = Math.round((z.volume||0)*100);
+    const src = z.source || 'off';
+    const muted = z.muted;
+    return `<div class="audio-card">
+      <div class="audio-name">${z.name}</div>
+      <div class="vol-bar"><div class="vol-fill" style="width:${muted?0:volPct}%"></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.58rem;color:var(--muted)">
+        <span>${muted?'🔇 MUTE':(volPct+'%')}</span>
+        <span class="source-badge ${src==='off'?'off':''}">${src.toUpperCase()}</span>
+      </div>
+      <div style="margin-top:.5rem;display:flex;gap:.3rem">
+        <button class="scene-btn" onclick="setVol('${z.id}',${Math.min(1,z.volume+.1)})">＋</button>
+        <button class="scene-btn" onclick="setVol('${z.id}',${Math.max(0,z.volume-.1)})">－</button>
+        <button class="scene-btn" onclick="toggleMute('${z.id}',${!z.muted})">${muted?'🔊':'🔇'}</button>
+        <select onchange="setSource('${z.id}',this.value)" style="font-size:.58rem;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:.1rem">
+          <option ${src==='dj'?'selected':''} value="dj">DJ</option>
+          <option ${src==='line'?'selected':''} value="line">Line</option>
+          <option ${src==='bluetooth'?'selected':''} value="bluetooth">BT</option>
+          <option ${src==='off'?'selected':''} value="off">Off</option>
+        </select>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Lights renderer ──────────────────────────────────────────────────────────
+function renderLights(lights) {
+  if (!lights || !lights.length) return;
+  document.getElementById('lights-grid').innerHTML = lights.map(l => `
+    <div class="light-card" onclick="toggleLight('${l.id}',${!l.on})" style="cursor:pointer">
+      <div class="light-dot ${l.on&&l.reachable?'on':''}"></div>
+      <div>
+        <div class="light-name">${l.name}</div>
+        <div class="light-bri">${l.on ? Math.round(l.brightness/254*100)+'%' : 'OFF'}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Alerts ───────────────────────────────────────────────────────────────────
+function renderAlerts(alerts) {
+  const panel = document.getElementById('alerts-panel');
+  if (!alerts || !alerts.length) {
+    panel.innerHTML = '<div style="font-size:.6rem;color:var(--muted);padding:.3rem 0">アラートなし</div>';
+    return;
+  }
+  panel.innerHTML = alerts.map(a => `
+    <div class="alert-row ${a.level}">
+      <span style="color:var(--muted)">[${a.zone_id}]</span>
+      <span class="alert-msg">${a.message}</span>
+      <button onclick="resolveAlert(${a.id})" style="margin-left:auto;font-size:.55rem;background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;border-radius:2px;padding:.1rem .4rem">解決</button>
+    </div>`).join('');
+}
+
+// ── API actions ──────────────────────────────────────────────────────────────
+async function audioScene(name) {
+  await fetch(`${API}/api/v1/audio/scene/${name}`, { method: 'POST' });
+  fetchAll();
+}
+async function lightPreset(name) {
+  await fetch(`${API}/api/v1/lights/scene/${name}`, { method: 'POST' });
+  setTimeout(fetchAll, 500);
+}
+async function setVol(zone, vol) {
+  await fetch(`${API}/api/v1/audio/${zone}/volume`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({volume: parseFloat(vol.toFixed(2))}) });
+  fetchAll();
+}
+async function toggleMute(zone, muted) {
+  await fetch(`${API}/api/v1/audio/${zone}/mute`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({muted}) });
+  fetchAll();
+}
+async function setSource(zone, source) {
+  await fetch(`${API}/api/v1/audio/${zone}/source`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({source}) });
+  fetchAll();
+}
+async function toggleLight(id, on) {
+  await fetch(`${API}/api/v1/lights/${id}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({on}) });
+  setTimeout(fetchAll, 300);
+}
+async function resolveAlert(id) {
+  await fetch(`${API}/api/v1/alerts/${id}/resolve`, { method:'POST' });
+  fetchAll();
+}
+
+// ── Data fetch ───────────────────────────────────────────────────────────────
 function fetchAll() {
   Promise.all([
     fetch(`${API}/api/v1/dashboard`).then(r=>r.json()),
@@ -312,47 +370,36 @@ function fetchAll() {
   ]).then(([dash, ctrl]) => {
     controls = ctrl;
     renderZones(dash.zones);
+    renderAlerts(dash.alerts);
+    renderEnergy(dash.energy);
+    renderDj(dash.dj);
+    renderAudio(dash.audio);
+    renderLights(dash.lights);
     document.getElementById('last-update').textContent = new Date().toLocaleTimeString('ja-JP');
   }).catch(e => console.warn('fetch error', e));
 }
 
+// ── WebSocket ────────────────────────────────────────────────────────────────
 function connectWS() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  ws = new WebSocket(`${proto}://${location.host}/ws`);
+  const ws = new WebSocket(`${proto}://${location.host}/ws`);
   const dot = document.getElementById('ws-dot');
-  const status = document.getElementById('ws-status');
+  const statusEl = document.getElementById('ws-status');
 
   ws.onopen = () => {
     dot.classList.remove('offline');
-    status.textContent = 'WebSocket: 接続済み';
+    statusEl.textContent = 'WebSocket: 接続済み';
     fetchAll();
   };
-  ws.onmessage = (e) => {
-    // Incremental update on new sensor reading
-    try {
-      const r = JSON.parse(e.data);
-      // Store in zoneData keyed by node prefix
-      const zid = r.node_id.match(/node-(z\d)/)?.[1];
-      if (zid) {
-        if (!zoneData[zid]) zoneData[zid] = {};
-        if (r.sensor_type === 'co2') zoneData[zid].co2_ppm = r.value;
-        else if (r.sensor_type === 'temperature') zoneData[zid].temperature = r.value;
-        else if (r.sensor_type === 'humidity') zoneData[zid].humidity = r.value;
-        else if (r.sensor_type === 'water_temp') zoneData[zid].water_temp = r.value;
-      }
-    } catch {}
-    // Re-render controls every 10 messages
-    fetchAll();
-  };
+  ws.onmessage = () => fetchAll(); // refresh on any sensor update
   ws.onclose = () => {
     dot.classList.add('offline');
-    status.textContent = 'WebSocket: 切断 (再接続中...)';
+    statusEl.textContent = 'WebSocket: 切断 (再接続中...)';
     setTimeout(connectWS, 5000);
   };
   ws.onerror = () => ws.close();
 }
 
-// Initial load
 fetchAll();
 setInterval(fetchAll, 30000);
 connectWS();
