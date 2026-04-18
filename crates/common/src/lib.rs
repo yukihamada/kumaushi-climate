@@ -1,19 +1,13 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Datelike, NaiveTime, Utc, Weekday};
 use serde::{Deserialize, Serialize};
 
 /// Sensor reading published via MQTT
-/// Topic: `kumaushi/sensors/{node_id}/{sensor_type}`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SensorReading {
-    /// Sensor node ID (e.g. "node-z1-a")
     pub node_id: String,
-    /// Sensor type: "co2" | "temperature" | "humidity" | "water_temp"
     pub sensor_type: SensorType,
-    /// Raw value
     pub value: f64,
-    /// SI unit string
     pub unit: String,
-    /// UTC timestamp
     pub timestamp: DateTime<Utc>,
 }
 
@@ -71,21 +65,14 @@ pub enum ZoneMode {
 /// Control setpoints for a zone
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Setpoints {
-    /// Target temperature °C
     pub temperature: f64,
-    /// CO2 upper limit ppm (ventilation kicks in above this)
     pub co2_max: f64,
-    /// Target humidity %RH
     pub humidity: f64,
 }
 
 impl Default for Setpoints {
     fn default() -> Self {
-        Self {
-            temperature: 22.0,
-            co2_max: 800.0,
-            humidity: 50.0,
-        }
+        Self { temperature: 22.0, co2_max: 800.0, humidity: 50.0 }
     }
 }
 
@@ -97,14 +84,15 @@ pub struct ZoneState {
     pub co2_ppm: Option<f64>,
     pub water_temp: Option<f64>,
     pub updated_at: Option<DateTime<Utc>>,
+    /// true if any sensor for this zone is stale (>90s)
+    pub sensor_stale: bool,
 }
 
-/// Control output command (sent to GPIO)
+/// Control output command
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ControlCommand {
     pub device_id: String,
     pub device_type: DeviceType,
-    /// 0.0–1.0 for PWM, true/false mapped to 1.0/0.0 for relay
     pub value: f64,
     pub timestamp: DateTime<Utc>,
 }
@@ -120,7 +108,47 @@ pub enum DeviceType {
     Dehumidifier,
 }
 
-/// Dashboard snapshot returned by GET /api/v1/dashboard
+/// Weekly schedule entry: override setpoints during a time window on given weekdays
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Schedule {
+    pub id: i64,
+    pub zone_id: String,
+    /// ISO weekdays 1=Mon … 7=Sun, empty = every day
+    pub weekdays: Vec<u8>,
+    /// "HH:MM" local time (UTC+9 for Hokkaido)
+    pub time_from: String,
+    pub time_until: String,
+    pub setpoints: Setpoints,
+    pub enabled: bool,
+}
+
+impl Schedule {
+    /// Returns true if the schedule is active right now (UTC time, +9 offset applied internally)
+    pub fn is_active_now(&self) -> bool {
+        use chrono::TimeZone;
+        let jst_offset = chrono::FixedOffset::east_opt(9 * 3600).unwrap();
+        let now_jst = jst_offset.from_utc_datetime(&Utc::now().naive_utc());
+        let weekday_num = match now_jst.weekday() {
+            Weekday::Mon => 1u8,
+            Weekday::Tue => 2,
+            Weekday::Wed => 3,
+            Weekday::Thu => 4,
+            Weekday::Fri => 5,
+            Weekday::Sat => 6,
+            Weekday::Sun => 7,
+        };
+        if !self.weekdays.is_empty() && !self.weekdays.contains(&weekday_num) {
+            return false;
+        }
+        let now_time = now_jst.time();
+        let from = NaiveTime::parse_from_str(&self.time_from, "%H:%M").unwrap_or(NaiveTime::MIN);
+        let until = NaiveTime::parse_from_str(&self.time_until, "%H:%M")
+            .unwrap_or(NaiveTime::from_hms_opt(23, 59, 59).unwrap());
+        now_time >= from && now_time < until
+    }
+}
+
+/// Dashboard snapshot
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DashboardSnapshot {
     pub zones: Vec<Zone>,
@@ -130,9 +158,11 @@ pub struct DashboardSnapshot {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Alert {
+    pub id: i64,
     pub zone_id: String,
     pub level: AlertLevel,
     pub message: String,
+    pub resolved: bool,
     pub timestamp: DateTime<Utc>,
 }
 
@@ -144,7 +174,7 @@ pub enum AlertLevel {
     Critical,
 }
 
-/// PID controller state (serializable for persistence)
+/// PID controller state
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PidState {
     pub kp: f64,
@@ -158,44 +188,22 @@ pub struct PidState {
 
 impl PidState {
     pub fn ventilation() -> Self {
-        Self {
-            kp: 0.05,
-            ki: 0.001,
-            kd: 0.01,
-            integral: 0.0,
-            prev_error: 0.0,
-            output_min: 0.0,
-            output_max: 1.0,
-        }
+        Self { kp: 0.05, ki: 0.001, kd: 0.01, integral: 0.0, prev_error: 0.0, output_min: 0.0, output_max: 1.0 }
     }
 
     pub fn temperature() -> Self {
-        Self {
-            kp: 2.0,
-            ki: 0.1,
-            kd: 0.5,
-            integral: 0.0,
-            prev_error: 0.0,
-            output_min: 0.0,
-            output_max: 1.0,
-        }
+        Self { kp: 2.0, ki: 0.1, kd: 0.5, integral: 0.0, prev_error: 0.0, output_min: 0.0, output_max: 1.0 }
     }
 
-    /// Compute next output given setpoint, measured value, dt (seconds)
     pub fn compute(&mut self, setpoint: f64, measured: f64, dt: f64) -> f64 {
         let error = setpoint - measured;
         self.integral += error * dt;
-        // Anti-windup: clamp integral
         let max_integral = self.output_max / self.ki.max(1e-9);
         self.integral = self.integral.clamp(-max_integral, max_integral);
-        let derivative = if dt > 0.0 {
-            (error - self.prev_error) / dt
-        } else {
-            0.0
-        };
+        let derivative = if dt > 0.0 { (error - self.prev_error) / dt } else { 0.0 };
         self.prev_error = error;
-        let output = self.kp * error + self.ki * self.integral + self.kd * derivative;
-        output.clamp(self.output_min, self.output_max)
+        (self.kp * error + self.ki * self.integral + self.kd * derivative)
+            .clamp(self.output_min, self.output_max)
     }
 
     pub fn reset(&mut self) {
