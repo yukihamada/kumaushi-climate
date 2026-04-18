@@ -1,14 +1,14 @@
 use std::sync::Arc;
 use axum::{
     extract::{Path, Query, State, WebSocketUpgrade},
-    http::{HeaderMap, Request, StatusCode},
+    http::{Request, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Json, Response},
     routing::{delete, get, post},
     Router,
 };
 use axum::extract::ws::{Message, WebSocket};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tower_http::cors::CorsLayer;
 use tracing::{debug, error};
 

@@ -1,10 +1,9 @@
 use std::sync::Arc;
 use std::time::Instant;
 use rumqttc::{AsyncClient, Event, MqttOptions, Packet, QoS};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info};
 
 use kumaushi_common::{SensorReading, SensorType};
-use crate::SharedState;
 
 pub async fn run(state: Arc<crate::AppState>, host: &str, port: u16) {
     let client_id = format!("kumaushi-controller-{}", std::process::id());

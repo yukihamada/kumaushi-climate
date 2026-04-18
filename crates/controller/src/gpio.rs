@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 use std::sync::Mutex;
-use tracing::{debug, warn};
+use tracing::debug;
 
 /// Maps device ID → current value (0.0–1.0)
 pub struct GpioController {

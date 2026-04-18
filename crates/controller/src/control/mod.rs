@@ -2,10 +2,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::time;
-use tracing::{debug, info, warn};
+use tracing::{debug, warn};
 
 use kumaushi_common::{PidState, ZoneMode};
-use crate::SharedState;
 
 const SENSOR_STALE_SECS: u64 = 90;
 /// Minimum fan output when sensor is stale (failsafe ventilation)
