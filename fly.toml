@@ -6,6 +6,8 @@ primary_region = "nrt"
 [env]
 BIND_ADDR = "0.0.0.0:3000"
 KUMAUSHI_DB = "/data/kumaushi.db"
+RUST_LOG = "info,kumaushi_controller=debug"
+MQTT_HOST = "localhost"
 
 [mounts]
 source = "kumaushi_data"
@@ -35,8 +37,8 @@ soft_limit = 100
 [[services.http_checks]]
 interval = "30s"
 timeout = "5s"
-grace_period = "15s"
-path = "/api/v1/dashboard"
+grace_period = "30s"
+path = "/dashboard"
 
 [[vm]]
 size = "shared-cpu-1x"
